@@ -148,6 +148,55 @@ python genomic_data_upload.py /path/to/data \
     --email-config email_config.yaml
 ```
 
+## 📊 Data Visualization
+
+The project includes an interactive web-based visualization interface built with Streamlit and Plotly.
+
+### Starting the Visualization Interface
+
+```bash
+streamlit run visualize_data.py
+```
+
+This will open a web browser with the visualization dashboard.
+
+### Available Visualizations
+
+#### TMB Analysis
+- TMB distribution histogram
+- TMB values with confidence intervals
+- Summary statistics
+- Interactive data table with filtering
+
+#### Copy Number Analysis
+- Chromosome coverage plots
+- CNV heatmap for top genes
+- Sample and gene statistics
+- Filtered data browser
+
+### Features
+- Interactive plots with zoom and pan
+- Downloadable plot images
+- Data filtering capabilities
+- Raw data access
+- Cross-sample comparisons
+
+### Customizing Visualizations
+
+You can customize the visualizations by modifying the `visualize_data.py` script:
+
+```python
+# Example: Changing TMB plot colors
+def plot_tmb_distribution(df):
+    fig = px.histogram(
+        df,
+        x='tmb',
+        title='TMB Distribution',
+        color_discrete_sequence=['#1f77b4']  # Custom color
+    )
+    return fig
+```
+
 ## 📧 Email Notifications
 
 Configure email settings in `email_config.yaml`:
