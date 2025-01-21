@@ -284,6 +284,270 @@ visualizer.create_circos_plot(
 )
 ```
 
+### 📚 Example Use Cases
+
+#### 1. Clinical Report Generation
+Generate a comprehensive clinical report with TMB and CNV data:
+
+```python
+from genomic_visualizations import GenomicVisualizer
+import pandas as pd
+
+# Initialize visualizer
+visualizer = GenomicVisualizer(output_dir="clinical_reports")
+
+# Load data
+tmb_data = pd.read_csv("patient_tmb.csv")
+cnv_data = pd.read_csv("patient_cnv.csv")
+
+# Create patient report directory
+patient_id = "PATIENT001"
+report_dir = f"reports/{patient_id}"
+os.makedirs(report_dir, exist_ok=True)
+
+# 1. TMB Plot with confidence intervals
+tmb_plot = visualizer.create_tmb_plot(
+    tmb_data,
+    highlight_sample=patient_id,
+    output_file=f"{report_dir}/tmb_profile.png"
+)
+
+# 2. Chromosome-specific CNV plots
+affected_chromosomes = cnv_data[cnv_data['log2'].abs() > 0.5]['chrom'].unique()
+for chrom in affected_chromosomes:
+    visualizer.create_chromosome_plot(
+        cnv_data,
+        chrom,
+        output_file=f"{report_dir}/chr{chrom}_profile.png",
+        highlight_genes=['BRCA1', 'BRCA2', 'TP53']  # Highlight important genes
+    )
+
+# 3. Genome-wide Circos plot
+visualizer.create_circos_plot(
+    cnv_data,
+    output_file=f"{report_dir}/genome_overview.png",
+    title=f"Patient {patient_id} Genomic Profile"
+)
+```
+
+#### 2. Cohort Analysis
+Compare multiple samples in a cohort:
+
+```python
+# Load cohort data
+cohort_data = pd.read_csv("cohort_cnv.csv")
+
+# 1. Create cohort-wide heatmap
+visualizer.create_cohort_heatmap(
+    cohort_data,
+    sample_groups={'Responder': ['P1', 'P2'], 'Non-responder': ['P3', 'P4']},
+    output_file="cohort_heatmap.png"
+)
+
+# 2. Compare TMB distributions
+visualizer.create_tmb_distribution(
+    cohort_data,
+    group_column='response_status',
+    output_file="tmb_by_response.png"
+)
+
+# 3. Export for detailed IGV analysis
+for sample in cohort_data['sample_id'].unique():
+    sample_data = cohort_data[cohort_data['sample_id'] == sample]
+    visualizer.export_for_igv(
+        sample_data,
+        output_file=f"igv_tracks/{sample}.igv",
+        track_name=f"Sample_{sample}"
+    )
+```
+
+#### 3. Publication-Quality Figures
+Create publication-ready visualizations:
+
+```python
+# Configure publication settings
+publication_settings = {
+    'dpi': 300,
+    'width': 8,
+    'height': 6,
+    'font_family': 'Arial',
+    'font_size': 12,
+    'line_width': 1.5
+}
+
+# 1. Multi-panel figure
+def create_figure_1(data, settings):
+    """Create a multi-panel figure for publication"""
+    import matplotlib.pyplot as plt
+    from matplotlib.gridspec import GridSpec
+    
+    fig = plt.figure(figsize=(settings['width']*2, settings['height']*2))
+    gs = GridSpec(2, 2, figure=fig)
+    
+    # A. TMB Distribution
+    ax1 = fig.add_subplot(gs[0, 0])
+    visualizer.plot_tmb_distribution(
+        data,
+        ax=ax1,
+        title='A) TMB Distribution'
+    )
+    
+    # B. Circos Plot
+    ax2 = fig.add_subplot(gs[0, 1])
+    visualizer.plot_circos(
+        data,
+        ax=ax2,
+        title='B) Genome-wide CNV'
+    )
+    
+    # C. Gene-level Analysis
+    ax3 = fig.add_subplot(gs[1, :])
+    visualizer.plot_gene_heatmap(
+        data,
+        ax=ax3,
+        title='C) Gene-level CNV Profile'
+    )
+    
+    plt.tight_layout()
+    return fig
+
+# Create and save the figure
+fig1 = create_figure_1(data, publication_settings)
+fig1.savefig('figure1.pdf', dpi=publication_settings['dpi'])
+```
+
+#### 4. Custom Analysis Pipeline
+Create a custom analysis pipeline combining multiple visualizations:
+
+```python
+class GenomicAnalysisPipeline:
+    def __init__(self, output_dir):
+        self.visualizer = GenomicVisualizer(output_dir)
+        self.output_dir = output_dir
+    
+    def analyze_sample(self, sample_id, cnv_data, tmb_data):
+        """Run complete analysis for a sample"""
+        # Create sample directory
+        sample_dir = os.path.join(self.output_dir, sample_id)
+        os.makedirs(sample_dir, exist_ok=True)
+        
+        # 1. Basic QC plots
+        self._create_qc_plots(sample_dir, cnv_data)
+        
+        # 2. Detailed analysis
+        self._create_detailed_analysis(sample_dir, cnv_data, tmb_data)
+        
+        # 3. Export for IGV
+        self._export_igv_files(sample_dir, cnv_data)
+    
+    def _create_qc_plots(self, output_dir, data):
+        """Create quality control plots"""
+        # Coverage plot
+        self.visualizer.create_coverage_plot(
+            data,
+            output_file=os.path.join(output_dir, "coverage.png")
+        )
+        
+        # Segment size distribution
+        self.visualizer.create_segment_size_plot(
+            data,
+            output_file=os.path.join(output_dir, "segment_sizes.png")
+        )
+    
+    def _create_detailed_analysis(self, output_dir, cnv_data, tmb_data):
+        """Create detailed analysis plots"""
+        # CNV profile
+        self.visualizer.create_circos_plot(
+            cnv_data,
+            output_file=os.path.join(output_dir, "cnv_profile.png")
+        )
+        
+        # TMB analysis
+        self.visualizer.create_tmb_plot(
+            tmb_data,
+            output_file=os.path.join(output_dir, "tmb_profile.png")
+        )
+        
+        # Gene-level analysis
+        self.visualizer.create_gene_heatmap(
+            cnv_data,
+            output_file=os.path.join(output_dir, "gene_profile.png")
+        )
+    
+    def _export_igv_files(self, output_dir, data):
+        """Export files for IGV visualization"""
+        # Export IGV format
+        self.visualizer.export_for_igv(
+            data,
+            output_file=os.path.join(output_dir, "cnv.igv")
+        )
+        
+        # Export BED format
+        self.visualizer.export_bed_file(
+            data,
+            output_file=os.path.join(output_dir, "cnv.bed")
+        )
+
+# Usage example
+pipeline = GenomicAnalysisPipeline("analysis_results")
+pipeline.analyze_sample("PATIENT001", cnv_data, tmb_data)
+```
+
+#### 5. Interactive Analysis Session
+Example of an interactive analysis session:
+
+```python
+import streamlit as st
+from genomic_visualizations import GenomicVisualizer
+
+def interactive_analysis():
+    st.title("Interactive Genomic Analysis")
+    
+    # File upload
+    cnv_file = st.file_uploader("Upload CNV Data", type="csv")
+    if cnv_file is not None:
+        data = pd.read_csv(cnv_file)
+        
+        # Analysis options
+        analysis_type = st.selectbox(
+            "Select Analysis",
+            ["Basic QC", "Detailed Analysis", "Gene Focus"]
+        )
+        
+        if analysis_type == "Basic QC":
+            # Show QC plots
+            st.subheader("Coverage Analysis")
+            coverage_plot = visualizer.create_coverage_plot(data)
+            st.pyplot(coverage_plot)
+            
+            st.subheader("Data Quality")
+            quality_metrics = calculate_quality_metrics(data)
+            st.table(quality_metrics)
+            
+        elif analysis_type == "Detailed Analysis":
+            # Show detailed analysis
+            st.subheader("Genome-wide Analysis")
+            circos_plot = visualizer.create_circos_plot(data)
+            st.pyplot(circos_plot)
+            
+            # Chromosome selection
+            selected_chrom = st.selectbox("Select Chromosome", data['chrom'].unique())
+            chrom_plot = visualizer.create_chromosome_plot(data, selected_chrom)
+            st.pyplot(chrom_plot)
+            
+        else:  # Gene Focus
+            # Gene-specific analysis
+            genes = st.multiselect("Select Genes", data['gene'].unique())
+            if genes:
+                gene_plot = visualizer.create_gene_focused_plot(data, genes)
+                st.pyplot(gene_plot)
+
+if __name__ == "__main__":
+    interactive_analysis()
+```
+
+These examples demonstrate various ways to use the visualization tools for different purposes, from clinical reporting to research analysis. Each example can be customized based on specific needs.
+
 ### 🔧 Troubleshooting
 
 Common issues and solutions:
