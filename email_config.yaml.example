@@ -1,0 +1,11 @@
+smtp:
+  server: smtp.example.com
+  port: 587
+  sender: sender@example.com
+  username: your-username
+  password: your-password
+  use_tls: true
+
+recipients:
+  - recipient1@example.com
+  - recipient2@example.com
