@@ -150,52 +150,177 @@ python genomic_data_upload.py /path/to/data \
 
 ## 📊 Data Visualization
 
-The project includes an interactive web-based visualization interface built with Streamlit and Plotly.
+The project provides multiple visualization options through an interactive web interface and advanced genomic visualization tools.
 
-### Starting the Visualization Interface
+### 🌐 Interactive Dashboard
 
+Start the visualization dashboard:
 ```bash
 streamlit run visualize_data.py
 ```
 
-This will open a web browser with the visualization dashboard.
+#### Basic Visualizations
+- **TMB Analysis**
+  - Distribution histogram
+  - Confidence interval plots
+  - Summary statistics
+  - Interactive data table
 
-### Available Visualizations
+- **Copy Number Analysis**
+  - Chromosome coverage plots
+  - CNV heatmap for top genes
+  - Sample statistics
+  - Filtered data browser
 
-#### TMB Analysis
-- TMB distribution histogram
-- TMB values with confidence intervals
-- Summary statistics
-- Interactive data table with filtering
+### 🧬 Advanced Genomic Visualizations
 
-#### Copy Number Analysis
-- Chromosome coverage plots
-- CNV heatmap for top genes
-- Sample and gene statistics
-- Filtered data browser
-
-### Features
-- Interactive plots with zoom and pan
-- Downloadable plot images
-- Data filtering capabilities
-- Raw data access
-- Cross-sample comparisons
-
-### Customizing Visualizations
-
-You can customize the visualizations by modifying the `visualize_data.py` script:
-
+#### Circos Plots
+Circular genome visualization showing CNV patterns across all chromosomes:
 ```python
-# Example: Changing TMB plot colors
-def plot_tmb_distribution(df):
-    fig = px.histogram(
-        df,
-        x='tmb',
-        title='TMB Distribution',
-        color_discrete_sequence=['#1f77b4']  # Custom color
-    )
-    return fig
+from genomic_visualizations import GenomicVisualizer
+
+visualizer = GenomicVisualizer()
+visualizer.create_circos_plot(cnv_data, title="Genome-wide CNV Profile")
 ```
+
+Features:
+- Chromosome ideograms
+- Color-coded CNV segments
+- Automatic scaling
+- Publication-quality output
+
+#### IGV Integration
+Export data for visualization in the Integrative Genomics Viewer (IGV):
+
+1. **IGV Format**
+   ```python
+   visualizer.export_for_igv(cnv_data, track_name="My CNV Data")
+   ```
+   - Wiggle track format
+   - Automatic track configuration
+   - Custom track names and colors
+
+2. **BED Format**
+   ```python
+   visualizer.export_bed_file(cnv_data)
+   ```
+   - Standard BED format
+   - Color-coded segments
+   - Gene annotations
+   - Position information
+
+#### Chromosome-Specific Plots
+Detailed visualization of individual chromosomes:
+```python
+visualizer.create_chromosome_plot(cnv_data, "1")  # For chromosome 1
+```
+
+Features:
+- Detailed CNV segments
+- Gene annotations
+- Position markers
+- Interactive zooming
+
+### 🎨 Customization Options
+
+#### Plot Styling
+```python
+# Custom colors for CNV segments
+def get_rgb(log2):
+    if log2 > 0.5:
+        return "255,0,0"  # Strong amplification
+    elif log2 > 0:
+        return "255,165,0"  # Weak amplification
+    elif log2 < -0.5:
+        return "0,0,255"  # Strong deletion
+    else:
+        return "0,165,255"  # Weak deletion
+```
+
+#### Output Formats
+- PNG (default)
+- SVG for vector graphics
+- PDF for publications
+- Interactive HTML for web
+
+#### Data Filtering
+```python
+# Filter by chromosome
+chromosome_data = cnv_data[cnv_data['chrom'] == '1']
+
+# Filter by gene
+gene_data = cnv_data[cnv_data['gene'].isin(['BRCA1', 'BRCA2'])]
+```
+
+### 📊 Example Workflows
+
+#### 1. Basic Analysis
+```bash
+# Start the dashboard
+streamlit run visualize_data.py
+
+# Select "TMB Analysis" or "Copy Number Analysis"
+# Interact with plots and tables
+```
+
+#### 2. IGV Visualization
+```bash
+# 1. Export data
+python genomic_visualizations.py --input cnv_data.csv --output-dir viz
+
+# 2. Open IGV
+# 3. Load exported files
+# 4. Configure tracks
+```
+
+#### 3. Publication Plots
+```python
+# Create high-resolution Circos plot
+visualizer = GenomicVisualizer(output_dir="publication_figures")
+visualizer.create_circos_plot(
+    cnv_data,
+    output_file="figure1.png",
+    title="Figure 1: Genome-wide CNV Profile"
+)
+```
+
+### 🔧 Troubleshooting
+
+Common issues and solutions:
+
+1. **Memory Issues**
+   ```python
+   # Reduce data size
+   filtered_data = cnv_data.sample(n=1000)
+   ```
+
+2. **Plot Quality**
+   ```python
+   # Increase DPI for better resolution
+   visualizer.create_circos_plot(cnv_data, dpi=300)
+   ```
+
+3. **IGV Format**
+   - Ensure chromosome names match genome build
+   - Check file permissions
+   - Verify track format
+
+### 🎯 Best Practices
+
+1. **Data Preparation**
+   - Clean data before visualization
+   - Remove outliers if necessary
+   - Verify chromosome naming
+
+2. **Plot Organization**
+   - Use consistent colors
+   - Add clear titles and labels
+   - Include scale bars
+
+3. **File Management**
+   - Use descriptive filenames
+   - Organize by analysis type
+   - Back up visualization configs
 
 ## 📧 Email Notifications
 
