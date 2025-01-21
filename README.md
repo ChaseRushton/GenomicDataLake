@@ -1,33 +1,58 @@
 # Genomic Data Lake
 
-A robust Python script for uploading and managing genomic data files to a database with advanced features including parallel processing, quality control reporting, and email notifications.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.7%2B-blue)
+![PostgreSQL](https://img.shields.io/badge/postgresql-15%2B-blue)
 
-## Features
+A robust Python-based solution for managing and analyzing genomic data. This project provides a comprehensive system for uploading, validating, and storing genomic data files with features like parallel processing, quality control reporting, and automated notifications.
 
-- **File Processing**
-  - Automatic file type detection and handling
+## 🚀 Key Features
+
+- **Robust Data Processing**
+  - Automatic file type detection and validation
   - Parallel processing for large files
-  - Configurable chunk size for optimal performance
-  - Dry run mode for validation without uploads
+  - Duplicate detection and handling
+  - Data standardization and cleaning
 
-- **Data Validation**
-  - Schema validation for different file types
-  - Data type checking and standardization
-  - Duplicate detection using record hashing
+- **Quality Control**
   - Comprehensive QC reports
+  - Data validation against predefined schemas
+  - Automated error detection and logging
+  - File-level and record-level validation
 
 - **Database Management**
-  - Automatic table creation and schema validation
-  - Table backups before modifications
-  - Transaction support for data integrity
+  - Automated schema management
+  - Optimized table indexing
+  - Automatic backups
+  - Transaction support
 
-- **Reporting**
-  - Detailed HTML email reports
-  - Processing statistics and summaries
-  - Color-coded success/failure indicators
-  - QC report attachments
+- **Monitoring & Reporting**
+  - HTML email reports with processing statistics
+  - Detailed logging
+  - Processing time tracking
+  - Error notifications
 
-## Installation
+## 📋 Requirements
+
+### Core Dependencies
+- Python 3.7+
+- PostgreSQL 15+
+- pip (Python package manager)
+
+### Python Packages
+```
+pandas>=1.5.0
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+PyYAML>=6.0.1
+tqdm>=4.65.0
+```
+
+### Optional Dependencies
+- Docker & Docker Compose (for containerized setup)
+- SMTP server (for email notifications)
+
+## 🛠️ Installation
 
 1. Clone the repository:
    ```bash
@@ -40,121 +65,82 @@ A robust Python script for uploading and managing genomic data files to a databa
    pip install -r requirements.txt
    ```
 
-3. Configure your database and email settings:
-   - Copy `email_config.yaml.example` to `email_config.yaml`
-   - Copy `db_config.json.example` to `db_config.json`
-   - Update both files with your settings
-
-## Database Setup
-
-You can set up the database using either Docker (recommended for development) or a local PostgreSQL installation.
-
-### Option 1: Docker Setup (Recommended for Development)
-
-The project includes a Docker-based PostgreSQL database setup for easy deployment. Make sure you have Docker and Docker Compose installed on your system.
-
-#### Prerequisites
-
-- Docker
-- Docker Compose
-- Python 3.7+
-- pip
-
-#### Starting the Database
-
-1. Start the database using the management script:
+3. Configure settings:
    ```bash
-   python manage_db.py start
+   # Copy example configuration files
+   cp email_config.yaml.example email_config.yaml
+   cp db_config.json.example db_config.json
+   
+   # Edit the files with your settings
+   nano email_config.yaml
+   nano db_config.json
    ```
 
-   This will:
-   - Start a PostgreSQL container
-   - Create necessary database schemas and tables
-   - Generate a `db_config.json` file with connection details
+## 💾 Database Setup
 
-   Optional arguments:
+Choose between two setup methods based on your needs:
+
+### 🐳 Option 1: Docker Setup (Recommended for Development)
+
+Quick setup with Docker:
+```bash
+# Start the database
+python manage_db.py start
+
+# Optional: Configure custom settings
+python manage_db.py start \
+    --host localhost \
+    --port 5432 \
+    --user genomic_user \
+    --password custom_password
+```
+
+### 🔧 Option 2: Local PostgreSQL Setup
+
+For production or when Docker isn't available:
+
+1. **Install PostgreSQL**:
    ```bash
-   python manage_db.py start \
-       --host localhost \
-       --port 5432 \
-       --user genomic_user \
-       --password genomic_password \
-       --dbname genomic_data
+   # Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install postgresql postgresql-contrib
+
+   # macOS with Homebrew
+   brew install postgresql
+
+   # Windows
+   # Download installer from https://www.postgresql.org/download/windows/
    ```
 
-2. To stop the database:
+2. **Run Setup Script**:
    ```bash
-   python manage_db.py stop
+   python setup_local_db.py --superuser-password your_password
    ```
 
-### Option 2: Local PostgreSQL Setup
+## 📊 Data Processing
 
-If you prefer to use a local PostgreSQL installation, follow these steps:
+### Supported File Types
 
-1. Install PostgreSQL:
-   - Windows: Download and install from [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
-   - macOS: `brew install postgresql`
-   - Linux: `sudo apt-get install postgresql`
+1. **TMB Data Files**
+   - Format: Tab-delimited text
+   - Required columns: SampleName, TMB
+   - Optional columns: BinomialLow, BinomialHigh
 
-2. Make sure PostgreSQL service is running:
-   - Windows: Check Services app
-   - macOS: `brew services start postgresql`
-   - Linux: `sudo service postgresql start`
+2. **CNS Data Files**
+   - Format: Tab-delimited text
+   - Required columns: SampleName, CHROM, START, STOP
+   - Optional columns: GENE, log2
 
-3. Run the local setup script:
-   ```bash
-   python setup_local_db.py --superuser-password your_superuser_password
-   ```
-
-   Optional arguments:
-   ```bash
-   python setup_local_db.py \
-       --host localhost \
-       --port 5432 \
-       --user genomic_user \
-       --password genomic_password \
-       --dbname genomic_data \
-       --superuser postgres \
-       --superuser-password your_superuser_password
-   ```
-
-   This will:
-   - Create a new database user
-   - Create the database
-   - Set up the schema and tables
-   - Generate a `db_config.json` file
-
-### Database Schema
-
-The database includes the following tables in the `genomic` schema:
-
-1. `tmb_data`:
-   - Sample-level TMB (Tumor Mutational Burden) data
-   - Includes confidence intervals and metadata
-
-2. `cns_data`:
-   - Copy number segment data
-   - Includes chromosomal positions and gene annotations
-
-Each table includes:
-- Automatic timestamps
-- Record hashing for deduplication
-- Appropriate indexes for efficient querying
-- Trigger-based timestamp updates
-
-## Usage
+### Running the Upload
 
 Basic usage:
 ```bash
 python genomic_data_upload.py /path/to/data
 ```
 
-With all options:
+Advanced options:
 ```bash
 python genomic_data_upload.py /path/to/data \
-    --files file1.txt file2.txt \
-    --db-config db_config.json \
-    --log-file upload.log \
     --parallel \
     --chunk-size 5000 \
     --backup-dir ./backups \
@@ -162,55 +148,121 @@ python genomic_data_upload.py /path/to/data \
     --email-config email_config.yaml
 ```
 
-### Command Line Arguments
+## 📧 Email Notifications
 
-- `directory`: Directory containing the files to process
-- `--files`: Specific files to process (optional)
-- `--db-config`: Path to database configuration file
-- `--log-file`: Path to log file
-- `--parallel`: Enable parallel processing
-- `--chunk-size`: Chunk size for parallel processing
-- `--backup-dir`: Directory for table backups
-- `--qc-dir`: Directory for QC reports
-- `--dry-run`: Validate files without uploading
-- `--email-config`: Path to email configuration file
-
-## Configuration Files
-
-### Database Configuration (db_config.json)
-```json
-{
-    "host": "localhost",
-    "port": 5432,
-    "database": "genomic_data",
-    "user": "username",
-    "password": "password"
-}
-```
-
-### Email Configuration (email_config.yaml)
+Configure email settings in `email_config.yaml`:
 ```yaml
 smtp:
   server: smtp.example.com
   port: 587
   sender: sender@example.com
-  username: username
-  password: password
+  username: your-username
+  password: your-password
   use_tls: true
 
 recipients:
-  - recipient1@example.com
-  - recipient2@example.com
+  - analyst1@example.com
+  - analyst2@example.com
 ```
 
-## Contributing
+Email reports include:
+- Processing summary
+- Success/failure statistics
+- QC report summaries
+- Attached detailed reports
+
+## 🔍 Quality Control
+
+QC reports include:
+- Record counts
+- Missing value analysis
+- Data type validation
+- Value distribution statistics
+- Duplicate detection results
+
+Access QC reports:
+```bash
+# Generate QC report only
+python genomic_data_upload.py /path/to/data --dry-run
+
+# Specify custom QC directory
+python genomic_data_upload.py /path/to/data --qc-dir ./custom_qc
+```
+
+## 🔄 Database Schema
+
+### TMB Data Table
+```sql
+CREATE TABLE genomic.tmb_data (
+    id SERIAL PRIMARY KEY,
+    sample_name VARCHAR(255) NOT NULL,
+    tmb FLOAT NOT NULL,
+    binomial_low FLOAT,
+    binomial_high FLOAT,
+    upload_timestamp TIMESTAMP,
+    record_hash VARCHAR(32) UNIQUE
+);
+```
+
+### CNS Data Table
+```sql
+CREATE TABLE genomic.cns_data (
+    id SERIAL PRIMARY KEY,
+    sample_name VARCHAR(255) NOT NULL,
+    chrom VARCHAR(50) NOT NULL,
+    start_pos INTEGER NOT NULL,
+    stop_pos INTEGER NOT NULL,
+    gene VARCHAR(255),
+    log2 FLOAT,
+    upload_timestamp TIMESTAMP,
+    record_hash VARCHAR(32) UNIQUE
+);
+```
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch:
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. Commit your changes:
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+4. Push to the branch:
+   ```bash
+   git push origin feature/amazing-feature
+   ```
 5. Open a Pull Request
 
-## License
+### Development Guidelines
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Follow PEP 8 style guide
+- Add unit tests for new features
+- Update documentation
+- Maintain backward compatibility
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- PostgreSQL team for the robust database system
+- Python community for excellent libraries
+- Contributors and users of this project
+
+## 📞 Support
+
+- Create an issue for bug reports or feature requests
+- Contact maintainers for security concerns
+- Check documentation for common issues
+
+## 🔮 Future Plans
+
+- [ ] Support for additional genomic file formats
+- [ ] Advanced data visualization
+- [ ] REST API for data access
+- [ ] Integration with analysis pipelines
+- [ ] Cloud storage support
