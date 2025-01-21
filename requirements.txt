@@ -3,3 +3,4 @@ sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.0  # For PostgreSQL connection
 PyYAML>=6.0.1
 tqdm>=4.65.0
+docker-compose>=1.29.2  # For managing Docker containers

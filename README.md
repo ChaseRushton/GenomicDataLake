@@ -45,6 +45,62 @@ A robust Python script for uploading and managing genomic data files to a databa
    - Copy `db_config.json.example` to `db_config.json`
    - Update both files with your settings
 
+## Database Setup
+
+The project includes a Docker-based PostgreSQL database setup for easy deployment. Make sure you have Docker and Docker Compose installed on your system.
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+- Python 3.7+
+- pip
+
+### Starting the Database
+
+1. Start the database using the management script:
+   ```bash
+   python manage_db.py start
+   ```
+
+   This will:
+   - Start a PostgreSQL container
+   - Create necessary database schemas and tables
+   - Generate a `db_config.json` file with connection details
+
+   Optional arguments:
+   ```bash
+   python manage_db.py start \
+       --host localhost \
+       --port 5432 \
+       --user genomic_user \
+       --password genomic_password \
+       --dbname genomic_data
+   ```
+
+2. To stop the database:
+   ```bash
+   python manage_db.py stop
+   ```
+
+### Database Schema
+
+The database includes the following tables in the `genomic` schema:
+
+1. `tmb_data`:
+   - Sample-level TMB (Tumor Mutational Burden) data
+   - Includes confidence intervals and metadata
+
+2. `cns_data`:
+   - Copy number segment data
+   - Includes chromosomal positions and gene annotations
+
+Each table includes:
+- Automatic timestamps
+- Record hashing for deduplication
+- Appropriate indexes for efficient querying
+- Trigger-based timestamp updates
+
 ## Usage
 
 Basic usage:
