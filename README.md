@@ -47,16 +47,20 @@ A robust Python script for uploading and managing genomic data files to a databa
 
 ## Database Setup
 
+You can set up the database using either Docker (recommended for development) or a local PostgreSQL installation.
+
+### Option 1: Docker Setup (Recommended for Development)
+
 The project includes a Docker-based PostgreSQL database setup for easy deployment. Make sure you have Docker and Docker Compose installed on your system.
 
-### Prerequisites
+#### Prerequisites
 
 - Docker
 - Docker Compose
 - Python 3.7+
 - pip
 
-### Starting the Database
+#### Starting the Database
 
 1. Start the database using the management script:
    ```bash
@@ -82,6 +86,43 @@ The project includes a Docker-based PostgreSQL database setup for easy deploymen
    ```bash
    python manage_db.py stop
    ```
+
+### Option 2: Local PostgreSQL Setup
+
+If you prefer to use a local PostgreSQL installation, follow these steps:
+
+1. Install PostgreSQL:
+   - Windows: Download and install from [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
+   - macOS: `brew install postgresql`
+   - Linux: `sudo apt-get install postgresql`
+
+2. Make sure PostgreSQL service is running:
+   - Windows: Check Services app
+   - macOS: `brew services start postgresql`
+   - Linux: `sudo service postgresql start`
+
+3. Run the local setup script:
+   ```bash
+   python setup_local_db.py --superuser-password your_superuser_password
+   ```
+
+   Optional arguments:
+   ```bash
+   python setup_local_db.py \
+       --host localhost \
+       --port 5432 \
+       --user genomic_user \
+       --password genomic_password \
+       --dbname genomic_data \
+       --superuser postgres \
+       --superuser-password your_superuser_password
+   ```
+
+   This will:
+   - Create a new database user
+   - Create the database
+   - Set up the schema and tables
+   - Generate a `db_config.json` file
 
 ### Database Schema
 
