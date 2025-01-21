@@ -121,31 +121,214 @@ For production or when Docker isn't available:
 
 ### Supported File Types
 
-1. **TMB Data Files**
-   - Format: Tab-delimited text
-   - Required columns: SampleName, TMB
-   - Optional columns: BinomialLow, BinomialHigh
+1. **TMB (Tumor Mutational Burden) Data**
+   **Format**: Tab-delimited text (`.txt`, `.tsv`)
+   ```
+   SampleName	TMB	BinomialLow	BinomialHigh	ExtraInfo
+   SAMPLE1	12.5	10.2	14.8	PASSED
+   SAMPLE2	8.3	6.1	10.5	PASSED
+   ```
 
-2. **CNS Data Files**
-   - Format: Tab-delimited text
-   - Required columns: SampleName, CHROM, START, STOP
-   - Optional columns: GENE, log2
+   **Required Columns**:
+   - `SampleName`: Unique sample identifier
+   - `TMB`: Tumor mutational burden value (float)
 
-### Running the Upload
+   **Optional Columns**:
+   - `BinomialLow`: Lower confidence interval
+   - `BinomialHigh`: Upper confidence interval
+   - `ExtraInfo`: Additional sample information
 
-Basic usage:
-```bash
-python genomic_data_upload.py /path/to/data
-```
+2. **CNV (Copy Number Variation) Data**
+   **Format**: Tab-delimited text (`.txt`, `.tsv`)
+   ```
+   SampleName	CHROM	START	STOP	GENE	log2	CN	Type
+   SAMPLE1	1	1000	2000	BRCA1	0.58	3	AMP
+   SAMPLE1	2	3000	4000	TP53	-1.0	1	DEL
+   ```
 
-Advanced options:
-```bash
-python genomic_data_upload.py /path/to/data \
-    --parallel \
-    --chunk-size 5000 \
-    --backup-dir ./backups \
-    --qc-dir ./qc_reports \
-    --email-config email_config.yaml
+   **Required Columns**:
+   - `SampleName`: Sample identifier
+   - `CHROM`: Chromosome number/name
+   - `START`: Start position
+   - `STOP`: End position
+
+   **Optional Columns**:
+   - `GENE`: Gene symbol
+   - `log2`: Log2 ratio
+   - `CN`: Copy number
+   - `Type`: Variation type (AMP/DEL)
+
+3. **VCF (Variant Call Format)**
+   **Format**: Standard VCF (`.vcf`, `.vcf.gz`)
+   ```
+   ##fileformat=VCFv4.2
+   #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+   1	1000	rs123	A	G	100	PASS	AF=0.5
+   ```
+
+   **Required Fields**:
+   - Standard VCF headers
+   - Core fields (CHROM, POS, ID, REF, ALT)
+
+   **Supported INFO Fields**:
+   - `AF`: Allele frequency
+   - `DP`: Read depth
+   - `SOMATIC`: Somatic status
+   - `IMPACT`: Variant impact
+
+4. **MAF (Mutation Annotation Format)**
+   **Format**: Tab-delimited text (`.maf`)
+   ```
+   Hugo_Symbol	Chromosome	Start_Position	Variant_Classification
+   BRCA1	17	41234451	Missense_Mutation
+   TP53	17	7577121	Nonsense_Mutation
+   ```
+
+   **Required Columns**:
+   - `Hugo_Symbol`: Gene symbol
+   - `Chromosome`: Chromosome number
+   - `Start_Position`: Mutation position
+   - `Variant_Classification`: Mutation type
+
+   **Optional Columns**:
+   - `Variant_Type`: SNP/INS/DEL
+   - `Reference_Allele`: Reference base(s)
+   - `Tumor_Seq_Allele2`: Tumor allele
+   - `t_alt_count`: Alt allele count
+
+5. **Expression Data**
+   **Format**: Tab-delimited text (`.txt`, `.tsv`)
+   ```
+   GeneID	SAMPLE1	SAMPLE2	SAMPLE3
+   BRCA1	10.5	12.3	9.8
+   TP53	8.7	7.9	11.2
+   ```
+
+   **Required Columns**:
+   - `GeneID`: Gene identifier
+   - Sample columns: Expression values
+
+   **Optional Metadata**:
+   - Gene descriptions
+   - Chromosome locations
+   - Strand information
+
+6. **Fusion Data**
+   **Format**: Tab-delimited text (`.txt`, `.tsv`)
+   ```
+   Sample	Gene1	Gene2	Breakpoint1	Breakpoint2	Type
+   SAMPLE1	BCR	ABL1	22:23632600	9:133729450	FUSION
+   ```
+
+   **Required Columns**:
+   - `Sample`: Sample identifier
+   - `Gene1`: 5' gene
+   - `Gene2`: 3' gene
+   - `Breakpoint1`: 5' breakpoint
+   - `Breakpoint2`: 3' breakpoint
+
+   **Optional Columns**:
+   - `Type`: Fusion type
+   - `ReadCount`: Supporting reads
+   - `Confidence`: Detection confidence
+
+7. **Clinical Data**
+   **Format**: Tab-delimited text (`.txt`, `.tsv`)
+   ```
+   SampleID	Age	Gender	Stage	Response
+   SAMPLE1	65	M	III	CR
+   SAMPLE2	45	F	II	PR
+   ```
+
+   **Required Columns**:
+   - `SampleID`: Sample identifier
+   - At least one clinical variable
+
+   **Optional Columns**:
+   - Demographic information
+   - Clinical outcomes
+   - Treatment information
+
+8. **BED Format**
+   **Format**: BED file (`.bed`)
+   ```
+   chr1	1000	2000	Feature1	0	+	1000	2000	255,0,0
+   ```
+
+   **Required Fields**:
+   - Chromosome
+   - Start position
+   - End position
+
+   **Optional Fields**:
+   - Name
+   - Score
+   - Strand
+   - ThickStart/ThickEnd
+   - RGB color
+
+### File Processing Rules
+
+1. **Validation**:
+   ```python
+   def validate_file(file_path):
+       """Validate file format and content"""
+       extension = file_path.suffix.lower()
+       if extension in ['.txt', '.tsv']:
+           validate_tabular_file(file_path)
+       elif extension in ['.vcf', '.vcf.gz']:
+           validate_vcf_file(file_path)
+       elif extension == '.maf':
+           validate_maf_file(file_path)
+   ```
+
+2. **Data Type Conversion**:
+   ```python
+   def convert_data_types(df, file_type):
+       """Convert columns to appropriate data types"""
+       if file_type == 'TMB':
+           df['TMB'] = pd.to_numeric(df['TMB'])
+           if 'BinomialLow' in df.columns:
+               df['BinomialLow'] = pd.to_numeric(df['BinomialLow'])
+       elif file_type == 'CNV':
+           df['START'] = pd.to_numeric(df['START'])
+           df['STOP'] = pd.to_numeric(df['STOP'])
+   ```
+
+3. **Quality Control**:
+   ```python
+   def check_data_quality(df, file_type):
+       """Check data quality"""
+       # Check for missing values
+       missing = df.isnull().sum()
+       
+       # Check for duplicates
+       duplicates = df.duplicated().sum()
+       
+       # Validate value ranges
+       if file_type == 'TMB':
+           assert df['TMB'].min() >= 0, "TMB values must be non-negative"
+   ```
+
+### Example Usage
+
+```python
+# Load and process multiple file types
+def process_genomic_data(sample_id):
+    # Load TMB data
+    tmb_data = pd.read_csv(f"{sample_id}_tmb.txt", sep='\t')
+    validate_file(tmb_data, 'TMB')
+    
+    # Load CNV data
+    cnv_data = pd.read_csv(f"{sample_id}_cnv.txt", sep='\t')
+    validate_file(cnv_data, 'CNV')
+    
+    # Load VCF data
+    vcf_data = read_vcf(f"{sample_id}.vcf")
+    validate_file(vcf_data, 'VCF')
+    
+    # Create integrated report
+    create_report(sample_id, tmb_data, cnv_data, vcf_data)
 ```
 
 ## 📊 Data Visualization
