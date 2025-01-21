@@ -6,6 +6,7 @@ import numpy as np
 from sqlalchemy import create_engine
 import json
 import os
+from genomic_visualizations import GenomicVisualizer
 
 def load_db_config():
     """Load database configuration"""
@@ -150,7 +151,7 @@ def main():
     # Sidebar for navigation
     page = st.sidebar.selectbox(
         "Select Analysis",
-        ["TMB Analysis", "Copy Number Analysis"]
+        ["TMB Analysis", "Copy Number Analysis", "Advanced Visualizations"]
     )
     
     if page == "TMB Analysis":
@@ -181,7 +182,7 @@ def main():
         except Exception as e:
             st.error(f"Error loading TMB data: {str(e)}")
     
-    else:  # Copy Number Analysis
+    elif page == "Copy Number Analysis":
         st.header("Copy Number Variation Analysis")
         
         try:
@@ -227,6 +228,106 @@ def main():
             
         except Exception as e:
             st.error(f"Error loading CNS data: {str(e)}")
+
+    else:  # Advanced Visualizations
+        st.header("Advanced Genomic Visualizations")
+        
+        try:
+            # Load CNV data
+            cns_data = load_cns_data(engine)
+            
+            # Initialize visualizer
+            visualizer = GenomicVisualizer()
+            
+            # Visualization options
+            viz_type = st.selectbox(
+                "Select Visualization Type",
+                ["Circos Plot", "IGV Export", "Chromosome Plot"]
+            )
+            
+            if viz_type == "Circos Plot":
+                st.subheader("Genome-wide Circos Plot")
+                
+                # Create Circos plot
+                circos_file = visualizer.create_circos_plot(cns_data)
+                
+                if circos_file and os.path.exists(circos_file):
+                    st.image(circos_file)
+                    
+                    # Download button
+                    with open(circos_file, "rb") as file:
+                        btn = st.download_button(
+                            label="Download Circos Plot",
+                            data=file,
+                            file_name="circos_plot.png",
+                            mime="image/png"
+                        )
+            
+            elif viz_type == "IGV Export":
+                st.subheader("Export for IGV")
+                
+                # Export options
+                export_format = st.radio(
+                    "Select Export Format",
+                    ["IGV Format", "BED Format"]
+                )
+                
+                if export_format == "IGV Format":
+                    igv_file = visualizer.export_for_igv(cns_data)
+                    if igv_file:
+                        with open(igv_file, "r") as file:
+                            st.download_button(
+                                label="Download IGV File",
+                                data=file,
+                                file_name="cnv_data.igv",
+                                mime="text/plain"
+                            )
+                else:
+                    bed_file = visualizer.export_bed_file(cns_data)
+                    if bed_file:
+                        with open(bed_file, "r") as file:
+                            st.download_button(
+                                label="Download BED File",
+                                data=file,
+                                file_name="cnv_data.bed",
+                                mime="text/plain"
+                            )
+                
+                # IGV instructions
+                st.markdown("""
+                ### Loading data in IGV:
+                1. Open IGV
+                2. Select the appropriate genome build (hg38)
+                3. File → Load from File
+                4. Select the downloaded file
+                """)
+            
+            else:  # Chromosome Plot
+                st.subheader("Chromosome-specific Plot")
+                
+                # Chromosome selection
+                chrom = st.selectbox(
+                    "Select Chromosome",
+                    sorted(cns_data['chrom'].unique())
+                )
+                
+                # Create chromosome plot
+                chrom_file = visualizer.create_chromosome_plot(cns_data, chrom)
+                
+                if chrom_file and os.path.exists(chrom_file):
+                    st.image(chrom_file)
+                    
+                    # Download button
+                    with open(chrom_file, "rb") as file:
+                        btn = st.download_button(
+                            label="Download Chromosome Plot",
+                            data=file,
+                            file_name=f"chromosome_{chrom}_plot.png",
+                            mime="image/png"
+                        )
+            
+        except Exception as e:
+            st.error(f"Error creating visualization: {str(e)}")
 
 if __name__ == "__main__":
     main()
