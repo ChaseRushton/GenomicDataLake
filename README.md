@@ -117,6 +117,52 @@ For production or when Docker isn't available:
    python setup_local_db.py --superuser-password your_password
    ```
 
+## 🎯 cBioPortal Integration
+
+Visualize and analyze genomic data through cBioPortal, a powerful web-based platform integrated with our data lake.
+
+### 🔄 Setup Options
+
+Choose from three deployment methods:
+
+#### 🐳 Docker Setup (Recommended)
+Quick setup using Docker Compose:
+```bash
+cd cbioportal-setup/docker
+# Update database credentials in docker-compose.yml
+docker-compose up -d
+```
+
+#### 🪟 Windows Setup
+Native installation on Windows:
+```powershell
+# Install dependencies (Java, Maven, Python)
+cd cbioportal-setup/windows
+# Update credentials in config/portal.properties
+mvn tomcat7:run
+```
+
+#### 🐧 Linux Setup
+Automated installation on Linux:
+```bash
+cd cbioportal-setup/linux
+# Make scripts executable
+chmod +x install.sh start.sh
+# Run installation
+sudo ./install.sh
+# Start the portal
+./start.sh
+```
+
+### 📊 Features
+- SQL Server integration with genomic data lake
+- Interactive visualization of genomic alterations
+- Patient-centric view of clinical data
+- Support for multiple study types
+- Customizable data queries and exports
+
+For detailed setup instructions and configuration options, see the [cBioPortal Setup Guide](cbioportal-setup/README.md).
+
 ## 📊 Data Processing
 
 ### Supported File Types
