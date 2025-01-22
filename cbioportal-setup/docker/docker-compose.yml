@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  cbioportal:
+    image: cbioportal/cbioportal:5.4.6
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_USER=sa  # Replace with your SQL Server username
+      - DB_PASSWORD=YourPassword  # Replace with your SQL Server password
+      - DB_CONNECTION_STRING=jdbc:sqlserver://host.docker.internal:1433;databaseName=cbioportal;encrypt=true;trustServerCertificate=true
+    volumes:
+      - ./study:/study/
+      - ./config/portal.properties:/local/portal.properties
+    depends_on:
+      - migration
+
+  migration:
+    image: cbioportal/cbioportal:5.4.6
+    restart: "no"
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_USER=sa  # Replace with your SQL Server username
+      - DB_PASSWORD=YourPassword  # Replace with your SQL Server password
+      - DB_CONNECTION_STRING=jdbc:sqlserver://host.docker.internal:1433;databaseName=cbioportal;encrypt=true;trustServerCertificate=true
+    command: [ "/wait-for-it.sh", "host.docker.internal:1433", "--", "python3", "/cbioportal/core/src/main/scripts/migrate_db.py", "--properties-file", "/cbioportal/portal.properties" ]
